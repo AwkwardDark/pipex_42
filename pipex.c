@@ -6,36 +6,34 @@
 /*   By: pajimene <pajimene@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 12:39:27 by pajimene          #+#    #+#             */
-/*   Updated: 2024/06/19 16:59:41 by pajimene         ###   ########.fr       */
+/*   Updated: 2024/06/24 13:28:00 by pajimene         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-void	ft_child_process(char **argv, char **envp, t_pipex *p)
+static void	ft_child_process(char **argv, char **envp, t_pipex *p)
 {
-	int	infile;
-
-	infile = open(argv[1], O_RDONLY, 0777);
-	if (infile == -1)
-		ft_error();
-	dup2(infile, STDIN_FILENO);
-	dup2(p->fd[1], STDOUT_FILENO);
+	p->infile = open(argv[1], O_RDONLY, 0777);
+	if (p->infile == -1)
+		ft_error(1);
 	close(p->fd[0]);
-	ft_exec_cmd(argv[2], envp);
+	dup2(p->infile, STDIN_FILENO);
+	dup2(p->fd[1], STDOUT_FILENO);
+	close(p->fd[1]);
+	ft_exec_cmd(argv[2], envp, p);
 }
 
-void	ft_parent_process(char **argv, char **envp, t_pipex *p)
+static void	ft_parent_process(char **argv, char **envp, t_pipex *p)
 {
-	int	outfile;
-
-	outfile = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0777);
-	if (outfile == -1)
-		ft_error();
-	dup2(p->fd[0], STDIN_FILENO);
-	dup2(outfile, STDOUT_FILENO);
+	p->outfile = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0777);
+	if (p->outfile == -1)
+		ft_error(1);
 	close(p->fd[1]);
-	ft_exec_cmd(argv[3], envp);
+	dup2(p->fd[0], STDIN_FILENO);
+	dup2(p->outfile, STDOUT_FILENO);
+	close(p->fd[0]);
+	ft_exec_cmd(argv[3], envp, p);
 }
 
 int	main(int argc, char **argv, char **envp)
@@ -45,20 +43,16 @@ int	main(int argc, char **argv, char **envp)
 	if (argc == 5)
 	{
 		if (pipe(p.fd) == -1)
-			return (ft_error());
+			ft_error(2);
 		p.pid = fork();
 		if (p.pid == -1)
-			return (ft_error());
+			ft_error(3);
 		if (p.pid == 0)
 			ft_child_process(argv, envp, &p);
 		waitpid(p.pid, NULL, 0);
 		ft_parent_process(argv, envp, &p);
-		return (0);
 	}
 	else
-	{
-		ft_putstr_fd("Wrong number of arguments\n\n", 2);
-		ft_putstr_fd("Format: ./pipex <infile> <cmd1> <cmd2> <outfile>\n", 1);
-		return (0);
-	}
+		ft_error(6);
+	return (0);
 }

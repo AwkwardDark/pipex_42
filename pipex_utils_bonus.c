@@ -1,18 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   pipex_utils.c                                      :+:      :+:    :+:   */
+/*   pipex_utils_bonus.c                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: pajimene <pajimene@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 19:01:18 by pajimene          #+#    #+#             */
-/*   Updated: 2024/06/19 11:53:58 by pajimene         ###   ########.fr       */
+/*   Updated: 2024/06/21 15:52:16 by pajimene         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "pipex.h"
+#include "pipex_bonus.h"
 
-char	*ft_find_path(char *cmd, char **envp)
+static void	ft_find_path(char *cmd, char **envp, t_pipex *p)
 {
 	char	**paths;
 	char	*append;
@@ -29,40 +29,67 @@ char	*ft_find_path(char *cmd, char **envp)
 		append = ft_strjoin(paths[i], "/");
 		cmd_path = ft_strjoin(append, cmd);
 		free(append);
-		if (access(cmd_path, F_OK | X_OK) == 0)
+		if (cmd_path && access(cmd_path, F_OK | X_OK) == 0)
 		{
 			free(paths);
-			return (cmd_path);
+			p->path = cmd_path;
+			return ;
 		}
 		free(cmd_path);
 	}
-	free(paths);
-	return (NULL);
+	ft_free(paths);
+	p->path = NULL;
 }
 
-void	ft_exec_cmd(char *cmd, char **envp)
+void	ft_exec_cmd(char *cmd, char **envp, t_pipex *p)
 {
 	char	**cmd_list;
-	char	*path;
 
 	cmd_list = ft_split(cmd, ' ');
 	if (!cmd_list)
-		ft_error();
-	path = ft_find_path(cmd_list[0], envp);
-	if (!path)
+		ft_error(5);
+	ft_find_path(cmd_list[0], envp, p);
+	if ((!p->path) && (access(cmd_list[0], F_OK | X_OK) == 0))
+		p->path = cmd_list[0];
+	if (!p->path)
 	{
 		ft_free(cmd_list);
-		ft_error();
+		ft_error(4);
 	}
-	if (execve(path, cmd_list, envp) == -1)
-		ft_error();
+	if (execve(p->path, cmd_list, envp) == -1)
+	{
+		ft_free(cmd_list);
+		free(p->path);
+		ft_error(0);
+	}	
 	ft_free(cmd_list);
-	free(path);
+	free(p->path);
 }
 
-int	ft_error(void)
+void	ft_error(int error)
 {
-	perror("Error");
+	if (error == 0)
+		ft_putstr_fd(ERR_EXEC, 2);
+	else if (error == 1)
+		ft_putstr_fd(ERR_OPEN, 2);
+	else if (error == 2)
+		ft_putstr_fd(ERR_PIPE, 2);
+	else if (error == 3)
+		ft_putstr_fd(ERR_PID, 2);
+	else if (error == 4)
+		ft_putstr_fd(ERR_CMD, 2);
+	else if (error == 5)
+		ft_putstr_fd(ERR_SPLIT, 2);
+	else if (error == 6)
+	{
+		ft_putstr_fd(ERR_ARG, 2);
+		ft_putstr_fd(FORMAT, 1);
+	}
+	else if (error == 7)
+	{
+		ft_putstr_fd(ERR_ARG, 2);
+		ft_putstr_fd(FORMAT_H, 1);
+	}
 	exit(EXIT_FAILURE);
 }
 

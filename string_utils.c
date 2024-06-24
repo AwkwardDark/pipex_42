@@ -6,13 +6,13 @@
 /*   By: pajimene <pajimene@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/15 17:58:59 by pajimene          #+#    #+#             */
-/*   Updated: 2024/06/19 11:54:28 by pajimene         ###   ########.fr       */
+/*   Updated: 2024/06/21 14:28:26 by pajimene         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-void	*ft_calloc(int number, int size)
+void	*ft_calloc(int size, int number)
 {
 	char			*mem;
 	unsigned char	*ptr;
@@ -40,7 +40,7 @@ int	ft_strncmp(char *s1, char *s2, int n)
 	return (s1[i] - s2[i]);
 }
 
-static int	ft_strlen(char *str)
+int	ft_strlen(char *str)
 {
 	int	i;
 
